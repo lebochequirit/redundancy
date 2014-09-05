@@ -193,3 +193,4 @@ SharedSelf ="Shared by you";
 GotShared ="Got shared";
 SharedTo = " (shared to %s)";
 NothingShared = "No shared files found.";
+EOL="End of life";

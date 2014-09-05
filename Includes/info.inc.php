@@ -44,10 +44,13 @@
 					<div class="col-lg-8">
 						<p class="form-control-static">
 							<?php 
-							if (strpos($GLOBALS["Program_Version"],"nightly" !== false) || strpos($GLOBALS["Program_Version"],"beta") !== false)
+							if (strpos($GLOBALS["Program_Version"],"eol") !== false)
+								echo "<span class=\"label label-danger\">".$GLOBALS["Program_Language"]["EOL"]."</span>";
+							else if (strpos($GLOBALS["Program_Version"],"nightly" !== false) || strpos($GLOBALS["Program_Version"],"beta") !== false)
 								echo "<span class=\"label label-warning\">".$GLOBALS["Program_Language"]["Unstable"]."</span>";
 							else
 								echo "<span class=\"label label-success\">".$GLOBALS["Program_Language"]["Stable"]."</span>";
+							
 							?>
 						</p>
 						<div class="col-lg-2"></div>
