@@ -41,14 +41,11 @@
 			exit;
 		}
 	}
-	
+	$agreed = false;
 	if (isset($_GET["s"]) == false && isset($_POST["s"]) == false)
-	{
-		$agreed = false;
-		$query =  $_SERVER["QUERY_STRING"];		
-		
-		?>
-		<div class = 'contentWrapper'>
+	{		
+		$query =  $_SERVER["QUERY_STRING"];			
+		?>		
 		<?php
 			if (isset($_GET["file"]))
 			{
@@ -69,10 +66,9 @@
 		?>
 			<a href = 'index.php?<?php echo $query;?>&s=true'>
 				<?php echo $GLOBALS["Program_Language"]["Delete_OK"];?>
-			</a>
-		</div>			
+			</a>		
 		<?php		
-		exit;
+		
 	}
 	else if (isset($_GET["s"]) || isset($_POST["s"]))
 	{
@@ -80,58 +76,61 @@
 			$agreed = true;
 		if (isset($_POST["s"]) && $_POST["s"] == "true")
 			$agreed = true;
-	}
-	if ($agreed = true && $_SESSION["role"] != 3 && isGuest() == false){
-		$success = false;
-		if (isset($_SESSION['user_name']) && (isset($_GET["file"]) || isset($_POST["file"]))) 
-		{ 	 	 
-			include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";
-			$localfilename = "";
-			if (isset($_GET["file"]))
-				$hash = mysqli_real_escape_string($connect,$_GET["file"]);
-			else
-				$hash = mysqli_real_escape_string($connect,$_POST["file"]);				
-			$userid = mysqli_real_escape_string($connect,$_SESSION['user_id']);		
-			if (!isLocalShared($hash,$_SESSION["user_id"])){
-				$success = getFileByHashAndDelete($hash,$userid);
-			}	
-			else{
+		if ($agreed = true && $_SESSION["role"] != 3 && isGuest() == false){
+			$success = false;
+			if (isset($_SESSION['user_name']) && (isset($_GET["file"]) || isset($_POST["file"]))) 
+			{ 	 	 
+				include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";
+				$localfilename = "";
+				if (isset($_GET["file"]))
+					$hash = mysqli_real_escape_string($connect,$_GET["file"]);
+				else
+					$hash = mysqli_real_escape_string($connect,$_POST["file"]);				
+				$userid = mysqli_real_escape_string($connect,$_SESSION['user_id']);		
+				if (!isLocalShared($hash,$_SESSION["user_id"])){
+					$success = getFileByHashAndDelete($hash,$userid);
+				}	
+				else{
+					if ($GLOBALS["config"]["Program_Debug"] == 1)
+						echo "is shared!";
+				}		
+			}
+			//Case 2: the user wants to delete a directory
+			else if (isset($_SESSION["user_name"]) &&  ((isset($_GET["dir"]) ) || isset($_POST["dir"]) ))
+			{			
+				if (isset($_GET["dir"]))
+						$todelete = $_GET["dir"];
+					else 	
+						$todelete = $_POST["dir"];	
 				if ($GLOBALS["config"]["Program_Debug"] == 1)
-					echo "is shared!";
-			}		
-		}
-		//Case 2: the user wants to delete a directory
-		else if (isset($_SESSION["user_name"]) &&  ((isset($_GET["dir"]) ) || isset($_POST["dir"]) ))
-		{			
-			if (isset($_GET["dir"]))
-					$todelete = $_GET["dir"];
-				else 	
-					$todelete = $_POST["dir"];	
-			if ($GLOBALS["config"]["Program_Debug"] == 1)
-				echo $todelete."<br>";
-			if ($_SESSION['currentdir'] == $todelete)
-				$_SESSION["currentdir"] = getRootDirectory($_SESSION['currentdir'],$_SESSION["user_id"]);
-			if (!isLocalShared($todelete,$_SESSION["user_id"])){
-				$success= deleteDir($todelete);	
+					echo $todelete."<br>";
+				if ($_SESSION['currentdir'] == $todelete)
+					$_SESSION["currentdir"] = getRootDirectory($_SESSION['currentdir'],$_SESSION["user_id"]);
+				if (!isLocalShared($todelete,$_SESSION["user_id"])){
+					$success= deleteDir($todelete);	
+				}
 			}
 		}
-	}
-	if (isset($_POST["method"]))
-	{		
-		if ($success == false)
-			echo "false";
-		else
-			echo "true";
-		exit;		
-	}
-	else{	
-		if ($GLOBALS["config"]["Program_Debug"] != 1){				
-			$dir = $_SESSION["currentdir"];			
-			if ($success == true)
-				header("Location: ./index.php?module=list&dir=".$dir."&message=file_delete_success");
-			else
-				header("Location: ./index.php?module=list&dir=".$dir."&message=file_delete_fail");
-			exit;
+		if ($agreed){
+			if (isset($_POST["method"]))
+			{		
+				if ($success == false)
+					echo "false";
+				else
+					echo "true";
+				exit;		
+			}
+			else{	
+				if ($GLOBALS["config"]["Program_Debug"] != 1){				
+					$dir = $_SESSION["currentdir"];			
+					if ($success == true && $agreed)
+						header("Location: ./index.php?module=list&dir=".$dir."&message=file_delete_success");
+					else
+						header("Location: ./index.php?module=list&dir=".$dir."&message=file_delete_fail");
+					exit;
+				}	
+			}
 		}	
 	}
+	
 ?>

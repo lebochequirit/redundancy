@@ -56,17 +56,24 @@
 	
 	//Includes DataBase file to create a database connection
 	include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
-	
+	$isDirShared = false;
+	$sharetext = "";
 	if (isset($_POST["searchquery"]) == false){
 		include $GLOBALS["Program_Dir"]."Includes/broadcrumbs.inc.php";	
 		$id = getDirectoryID(mysqli_real_escape_string($connect,$dir));
 		$hashcode = getHashByFile(mysqli_real_escape_string($connect,$_SESSION["currentdir"]));
-		if (isShared($hashcode))
+		$isDirShared = isShared($hashcode);
+		if ($isDirShared)
 		{
 			$sharetext = getShareLink($hashcode);		
 		}
 	}	
 	else{		
+		if ($_POST["searchquery"] == "")
+		{
+			header("Location: index.php?module=search&message=wronginput");
+			exit;
+		}
 		createQueryTitle($_POST["searchquery"]);
 	}
 	//$i is needed to alternate the css for each line
@@ -200,12 +207,13 @@
 	}
 	/*
 		Display the filelist
-	*/
+	*/	
 	while ($row = mysqli_fetch_object($result)) {
-		$date = strtotime($row->Uploaded);			
+		$date = date("d.m.y H:i:s",strtotime($row->Uploaded));			
 		/*
 			Determine which icon should be used;
 		*/				
+
 		$imagepath = getImagePath($row->Displayname,$row->Filename,$row->MimeType,$row->Hash,1);
 		/*
 			Get the share status
@@ -214,36 +222,29 @@
 		/*
 			Get fitting text for the share status
 		*/
-		$Share_Status = getShareStatus($row->Hash);
-		if (isset($fileToCopyOrToMove))
-			$Share_Status = "";			
-		/*
-			Display filelinks for the different cases (regular, move file, copy file, move dir, copy dir)
-		*/			
-		$dirlink = getDirectoryHyperlink($row->Displayname,$row->Filename,$row->Filename_only,$row->Hash);
-		
-		
-		/*
-			$i is needed to alternate the row colors;
-		*/
-		if ($i%2 == 0 )
-			$suffix = 0;
-		else
-			$suffix = 1;		
-		$i++;		
-		/*
-			Display several kinds of links for cases like copy file, move filey, copy dir, move dir and the regular display
-		*/	
-		$modulelink = getFileHyperlink($row->Displayname);
+		$Share_Status = "";
+		if (!isset($fileToCopyOrToMove))
+			$Share_Status = getShareStatus($row->Hash);			
+
+		$suffix = 0;
 		/*
 			Create the table content, based if it's a folder or a file
 		*/
 		if ($row->Displayname == $row->Filename)
-		{		
+		{	
+			/*
+				Display filelinks for the different cases (regular, move file, copy file, move dir, copy dir)
+			*/			
+			$dirlink = getDirectoryHyperlink($row->Displayname,$row->Filename,$row->Filename_only,$row->Hash);
+		
+			/*
+				Display several kinds of links for cases like copy file, move filey, copy dir, move dir and the regular display
+			*/	
+			$modulelink = getFileHyperlink($row->Displayname);	
 			echo str_replace("##suffix",$suffix,$GLOBALS["template"]["Table_Item_Definition"]);
 			echo str_replace(
 				array("##imagepath","##hash","##dirlink","##uploaded","##size"),
-				array($imagepath,$row->Hash,$dirlink,date("d.m.y H:i:s",$date),measurementCorrection(getDirectorySize($row->Displayname))),
+				array($imagepath,$row->Hash,$dirlink,$date,measurementCorrection(getDirectorySize($row->Displayname))),
 				$GLOBALS["template"]["Table_Item_template"]
 				);
 			if ( isset($_GET["move"]) == false && isset($_GET["copy"]) == false && isset($search) == false)
@@ -278,8 +279,7 @@
 		}			
 		else 
 		{			
-			echo str_replace("##suffix",$suffix,$GLOBALS["template"]["Table_File_Definition"]);		
-			$shared = isShared($row->Hash);
+			echo str_replace("##suffix",$suffix,$GLOBALS["template"]["Table_File_Definition"]);					
 			if ($shared == false){					
 				$shared = isLocalSharedAnyUser($row->Hash,$_SESSION["user_id"]);
 			}
@@ -288,7 +288,7 @@
 				$shared = " <span class = 'label label-primary'>".$GLOBALS["Program_Language"]["Share_Title"]."</span>";
 			echo str_replace(
 				array("##imagepath","##hash","##directory","##displayname","##hash","##croppeddisplayname","##uploaded","##size"),
-				array($imagepath,$row->Hash,$row->Directory,$row->Displayname,$row->Hash,htmlentities((getShortenedDisplayname(getFilenameWithLowercasedExtension($row->Displayname)))).$shared,date("d.m.y H:i:s",$date),measurementCorrection($row->Size)),
+				array($imagepath,$row->Hash,$row->Directory,$row->Displayname,$row->Hash,htmlentities((getShortenedDisplayname(getFilenameWithLowercasedExtension($row->Displayname)))).$shared,$date,measurementCorrection($row->Size)),
 				$GLOBALS["template"]["Table_File_template"]
 				);
 			if (isset($_SESSION["user_logged_in"]) && $GLOBALS["config"]["Program_Enable_Action_Buttons"] == 1 && isset($fileToCopyOrToMove) == false  && isset($search) == false && $GLOBALS["template"]["Actions"] == true)
@@ -304,7 +304,7 @@
 			echo "</td><td>$Share_Status";	
 		echo "</td></tr>";		
 		if ($GLOBALS["config"]["Program_Enable_JQuery"] == 1)
-			createContextMenu("#".$row->Hash,$i);	
+			createContextMenu("#".$row->Hash);	
 	}	
 	/*
 		Display the individual filelinks
@@ -354,24 +354,21 @@
 		array($GLOBALS["Program_Language"]["Manage_shares"]),
 		$GLOBALS["template"]["Manage_shares"]
 	);
-	if ($_SESSION["currentdir"] != "/" && isset($hashcode) && isShared($hashcode) && isset($_POST["searchquery"]) == false){
-		if (isShared($hashcode))
-		{
-			$sharetext = getShareLink($hashcode);		
-		}		
+	//$isDirShared = isShared($hashcode);
+	if ($_SESSION["currentdir"] != "/" && isset($hashcode) && $isDirShared && isset($_POST["searchquery"]) == false){		
+		//$sharetext = getShareLink($hashcode);					
 		echo "<a type=\"a\" href = 'index.php?module=share&file=".$hashcode."&delete=true'class=\"btn btn-default\"><span class=\"elusive icon-remove-sign glyphIcon\"></span>".$GLOBALS["Program_Language"]["Unshare"]."</a></div>";
 	}		
-	else if ($_SESSION["currentdir"] != "/" &&  isset($hashcode) && isShared($hashcode) == false && isset($_POST["searchquery"]) == false)
-	{
-		if (isShared($hashcode) == false)
-			echo "<a type=\"a\" href = 'index.php?module=download&module=share&file=".$hashcode."&new=true'class=\"btn btn-default\"><span class=\"elusive icon-share glyphIcon\"></span><span class='hidden-xs'>".$GLOBALS["Program_Language"]["Share"]."</span></a></div>";
+	else if ($_SESSION["currentdir"] != "/" &&  isset($hashcode) && $isDirShared == false && isset($_POST["searchquery"]) == false)
+	{		
+		echo "<a type=\"a\" href = 'index.php?module=download&module=share&file=".$hashcode."&new=true'class=\"btn btn-default\"><span class=\"elusive icon-share glyphIcon\"></span><span class='hidden-xs'>".$GLOBALS["Program_Language"]["Share"]."</span></a></div>";
 	}	
 	else if ($_SESSION["currentdir"] == "/" && !isset($_POST["searchquery"]))
 	{	
 		echo "</div>";
 	}
 ?>
-<?php if (isset($hashcode) && isShared($hashcode) && isset($_POST["searchquery"]) == false):?>
+<?php if (isset($hashcode) && $isDirShared && isset($_POST["searchquery"]) == false):?>
 	<div class="panel panel-default">
 		<div class="panel-body">
 			<form class="form-horizontal" role="form">  

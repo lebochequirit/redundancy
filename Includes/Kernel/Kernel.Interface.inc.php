@@ -23,24 +23,23 @@
 	/**
 	 * create a JQuery based context menu
 	 * @param $hashcode the hash of the file	
-	 * @param $count the current number of context menus already created	
 	 */
-	function createContextMenu($hashcode,$count)
-	{
-		++$count; 
+	function createContextMenu($hashcode)
+	{	
 		$lasthash = "";
 		$shared = isShared(str_replace("#","",$hashcode));
+		$HashCode_only = str_replace("#","",$hashcode);
 		if ($shared)
-			$Share_Status = "<a class = 'shared' href = 'index.php?module=share&file=".str_replace("#","",$hashcode)."&delete=true'><span class=\"elusive icon-link glyphIcon\"></span> ".$GLOBALS["Program_Language"]["Shared"]."</a>";
+			$Share_Status = "<a class = 'shared' href = 'index.php?module=share&file=".$HashCode_only."&delete=true'><span class=\"elusive icon-link glyphIcon\"></span> ".$GLOBALS["Program_Language"]["Shared"]."</a>";
 		else
-			$Share_Status = "<a href = 'index.php?module=share&file=".str_replace("#","",$hashcode)."&new=true'><span class=\"elusive icon-link glyphIcon\"></span> ".$GLOBALS["Program_Language"]["Share"]."</a>";
-		$folder = isDirectory(str_replace("#","",$hashcode));
-		echo "<ul id='context_menu$count' style='position:fixed;font-size:small;width:150px'>";
+			$Share_Status = "<a href = 'index.php?module=share&file=".$HashCode_only."&new=true'><span class=\"elusive icon-link glyphIcon\"></span> ".$GLOBALS["Program_Language"]["Share"]."</a>";
+		$folder = isDirectory($HashCode_only);
+		echo "<ul id='context_menu$HashCode_only' style='position:fixed;font-size:small;width:150px'>";
 		if ($folder == true)
 		{
 			include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";
 			$user = mysqli_real_escape_string($connect,$_SESSION["user_id"]);
-			$select = "Select Hash,Displayname,Filename,Directory from Files where UserID = '$user' and Hash = '".str_replace("#","",$hashcode)."' limit 1";
+			$select = "Select Hash,Displayname,Filename,Directory from Files where UserID = '$user' and Hash = '".$HashCode_only."' limit 1";
 			$result= mysqli_query($connect,$select);
 			while ($row = mysqli_fetch_object($result)) {
 				echo "<li><a href ='index.php?module=list&dir=".$row->Displayname."'><span class=\"elusive icon-folder-open glyphIcon\"></span> ".$GLOBALS["Program_Language"]["open_generic"]."</a></li>";
@@ -58,7 +57,7 @@
 		{
 			include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";
 			$user = mysqli_real_escape_string($connect,$_SESSION["user_id"]);
-			$select = "Select Displayname,Filename,Directory,Hash from Files where  Hash = '".str_replace("#","",$hashcode)."' limit 1";
+			$select = "Select Displayname,Filename,Directory,Hash from Files where  Hash = '".$HashCode_only."' limit 1";
 			$result= mysqli_query($connect,$select);
 			while ($row = mysqli_fetch_object($result)) {
 				echo "<li><a href ='index.php?module=file&file=".$row->Hash."'><span class=\"elusive icon-eye-open glyphIcon\"></span> ".$GLOBALS["Program_Language"]["open_generic"]."</a></li>";
@@ -77,8 +76,8 @@
 		}
 
 		echo "</ul>";
-		echo "<script>$(function() {\$('#context_menu$count').menu();\$('#context_menu$count').toggle();\$('$hashcode').bind('contextmenu', function(e){var MouseX;var MouseY;e.preventDefault();MouseX = e.clientX ;MouseY = e.clientY;$('#context_menu$count').css({'position':'fixed','top':MouseY,'left':MouseX,'z-index':'10'});\$('#context_menu$count').toggle('clip', {}, 100 );return false;});";
-		echo "\$('#context_menu$count').mouseleave(function(){\$(this).hide();});});";  
+		echo "<script>$(function() {\$('#context_menu$HashCode_only').menu();\$('#context_menu$HashCode_only').toggle();\$('$hashcode').bind('contextmenu', function(e){var MouseX;var MouseY;e.preventDefault();MouseX = e.clientX ;MouseY = e.clientY;$('#context_menu$HashCode_only').css({'position':'fixed','top':MouseY,'left':MouseX,'z-index':'10'});\$('#context_menu$HashCode_only').toggle('clip', {}, 100 );return false;});";
+		echo "\$('#context_menu$HashCode_only').mouseleave(function(){\$(this).hide();});});";  
 		echo "</script>";
 		echo "<script>
 			$(\"$hashcode\").click(500, function(e){
@@ -88,9 +87,9 @@
 				e.preventDefault();
 				MouseX = e.clientX ;
 				MouseY = e.clientY;
-				$('#context_menu$count').css(
+				$('#context_menu$HashCode_only').css(
 				{'position':'fixed','top':MouseY,'left':MouseX});
-				\$('#context_menu$count').toggle('clip', {}, 100 );				
+				\$('#context_menu$hashcode').toggle('clip', {}, 100 );				
 				return false;
 			});
 		</script>";
@@ -366,5 +365,23 @@
 				}
 			}
 		echo "</ul>";
+	}
+	/**
+	* Parse the language file
+	*/
+	function parseLanguageData(){
+		if (!isset($_SESSION))
+			session_start();
+		if (isset($GLOBALS["Program_language"]) == false)
+		{	
+			if (isset($_SESSION["language"]) && strpos($_SESSION["language"],"..") === false)
+			{				
+				$GLOBALS["Program_Language"] = parse_ini_file("./Language/".$_SESSION["language"].".lng");	
+			}
+			else
+			{				
+				$GLOBALS["Program_Language"] = parse_ini_file("./Language/".$GLOBALS["config"]["Program_Language"].".lng");
+			}
+		}
 	}
 ?>

@@ -128,47 +128,17 @@
 		//Abort management
 		if (isset($username) == false || empty($username) == true)
 			return 0;
-		include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";			
+		if (!isset($connect))
+			include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";			
 		$userID = "";
 		$user = mysqli_real_escape_string($connect,$username);
-		$amount_in_Byte  = 0;
-		$result = mysqli_query($connect,"Select ID, User from Users where User = '$user' or ID = '$user' LIMIT 1") or die("Error 022: ".mysqli_error($connect));
-		while ($row = mysqli_fetch_object($result)) {
-			$userID = $row->ID;				
-		}
-		$result = mysqli_query($connect,"Select Size from Files where UserID = '$userID'")  or die("Error 023: ".mysqli_error($connect));
+		$amount_in_Byte  = 0;		
+		$result = mysqli_query($connect,"Select Size from Files inner join Users u on u.ID ='$user' or u.User ='$user'")  or die("Error 023: ".mysqli_error($connect));
 		while ($row = mysqli_fetch_object($result)) {
 			$amount_in_Byte = $amount_in_Byte + $row->Size;			
 		}
 		mysqli_close($connect);		
 		return $amount_in_Byte ;
-	}
-	/**
-	 * sets the current used space into $_SESSION["space_used"]
-	 * @param $username the username or the user id (recommended)	
-	 */
-	function setUsedStorage($username)
-	{			
-		if (isset($_SESSION) == false)
-			session_start();
-			//Abort management
-		if (isset($username) == false || empty($username) == true)
-			return 0;
-		include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";			
-		$userID = "";		
-		$user = mysqli_real_escape_string($connect,$username);
-		$amount_in_Byte  = 0;
-		$result = mysqli_query($connect,"Select ID, User from Users where User = '$user' or ID = '$user' LIMIT 1") or die("Error: 022: ".mysqli_error($connect));
-		while ($row = mysqli_fetch_object($result)) {
-			$userID = $row->ID;				
-		}
-		$result = mysqli_query($connect,"Select Size from Files where UserID = $userID") or die("Error: 023: ".mysqli_error($connect));
-		while ($row = mysqli_fetch_object($result)) {
-			$amount_in_Byte = $amount_in_Byte + $row->Size;			
-		}
-		mysqli_close($connect);		
-		//Store the space information in the session
-		$_SESSION["space_used"] =  $amount_in_Byte;	
 	}	
 	/**
 	 * get the used percentage by the current session	
@@ -248,7 +218,8 @@
 	{				
 		if (isset($file) == false || empty($file) == true)
 			return false;
-		include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";
+		if (!isset($connect))
+			include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";
 		$hash =mysqli_real_escape_string($connect,$file); 
 		$result = mysqli_query($connect,"Select ID from Share where Hash = '".$hash."' limit 1") or die("Error: 024: ".mysqli_error($connect));
 		if (mysqli_affected_rows($connect) > 0){
@@ -265,7 +236,8 @@
 	{
 		if (isset($file) == false || empty($file) == true)
 			return -1;
-		include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
+		if (!isset($connect))
+			include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
 		$result = mysqli_query($connect,"Select Extern_ID from Share where Hash = '".mysqli_real_escape_string($connect,$file)."' limit 1") or die("Error: 024: ".mysqli_error($connect));
 		$share_dir = str_replace("index.php","",$_SERVER["PHP_SELF"]);
 		if ($row = mysqli_fetch_object($result)){
@@ -284,8 +256,7 @@
 	 * @return a fitting measurement (from Byte to TerraByte)
 	 */
 	function measurementCorrection($value,$offset = 1)
-	{
-		
+	{		
 		$measure = "B";	
 		$value = $value * $offset;		
 		if ($value > 1024 && $value  < 1024 * 1024)
@@ -322,7 +293,8 @@
 		if (isset($_SESSION) == false)
 			session_start();
 		$dirSize = 0;
-		include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
+		if (!isset($connect))
+			include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
 		$dirID = getDirectoryID($value);
 		$userID = mysqli_real_escape_string($connect,$_SESSION["user_id"]);
 		$result = mysqli_query($connect,"Select Size, Filename,Displayname from Files where UserID = '$userID' and Directory_ID = '$dirID'") or die("Error 025: ".mysqli_error($connect));
@@ -347,7 +319,8 @@
 			return 0;
 		if (isset($_SESSION) == false)
 			session_start();
-		include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
+		if (!isset($connect))
+			include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
 		$dirSize = 0;
 		$dirID = getDirectoryID($value);	
 		$userID = mysqli_real_escape_string($connect,$_SESSION["user_id"]);
@@ -388,7 +361,8 @@
 		}
 		else
 		{
-			include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
+			if (!isset($connect))
+				include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
 			$userID = mysqli_real_escape_string($connect,$_SESSION["user_id"]);
 			$result = mysqli_query($connect,"Select MimeType from Files where Filename = '$filename' or Hash = '$filename' limit 1") or die("Error 025: ".mysqli_error($connect));
 			$filename_mime = "";
@@ -410,7 +384,8 @@
 		if (isset($_SESSION) == false)
 			session_start();
 		$filename = -1;
-		include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";
+		if (!isset($connect))
+			include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";
 		$owner_ID = mysqli_real_escape_string($connect,$_SESSION["user_id"]);	
 		$folder = mysqli_real_escape_string($connect,$directory);
 		$result = mysqli_query($connect,"Select ID from Files where UserID = '".$owner_ID."' and Displayname = '$folder' and Filename = '$folder' limit 1") or die("Error 025: ".mysqli_error($connect));
@@ -429,7 +404,8 @@
 	{		
 		if (isset($_SESSION) == false)
 			session_start();	
-		include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
+		if (!isset($connect))
+			include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
 		$owner_ID = mysqli_real_escape_string($connect,$_SESSION["user_id"]);
 		$file = mysqli_real_escape_string($connect,$file);
 		$directory =  mysqli_real_escape_string($connect,$directory);
@@ -468,7 +444,8 @@
 		if (isset($_SESSION) == false)
 			session_start();
 		$filename = "";
-		include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
+		if (!isset($connect))
+			include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
 		$hashSafe = mysqli_real_escape_string($connect,$hash);
 		$userID = mysqli_real_escape_string($connect,$_SESSION["user_id"]);
 		$result = mysqli_query($connect,"Select Displayname from Files where UserID = '".$userID."' and Hash = '$hashSafe' limit 1") or die("Error 025: ".mysqli_error($connect));
@@ -487,7 +464,8 @@
 		if (isset($_SESSION) == false)
 			session_start();
 		$filename = -1;
-		include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
+		if (!isset($connect))
+			include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
 		$hashSafe = mysqli_real_escape_string($connect,$hash);
 		$userID = mysqli_real_escape_string($connect,$_SESSION["user_id"]);
 		$result = mysqli_query($connect,"Select ID from Files where  Hash = '$hashSafe' limit 1") or die("Error 025: ".mysqli_error($connect));
@@ -506,7 +484,8 @@
 		if (isset($_SESSION) == false)
 			session_start();
 		$filename = -1;
-		include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
+		if (!isset($connect))
+			include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
 		$idSafe = mysqli_real_escape_string($connect,$id);		
 		$result = mysqli_query($connect,"Select Hash from Files where id = '$idSafe' limit 1") or die("Error 025: ".mysqli_error($connect));
 		while ($row = mysqli_fetch_object($result)) {
@@ -525,7 +504,8 @@
 		if (isset($_SESSION) == false)
 			session_start();
 		$filename = "";
-		include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
+		if (!isset($connect))
+			include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
 		$userID = mysqli_real_escape_string($connect,$_SESSION["user_id"]);
 		$result = mysqli_query($connect,"Select Hash from Files where UserID = '".$userID."' and Displayname = '$file' limit 1") or die("Error 025: ".mysqli_error($connect));
 		while ($row = mysqli_fetch_object($result)) {
@@ -545,7 +525,8 @@
 		if (isset($_SESSION) == false)
 			session_start();
 		$filename = "";
-		include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
+		if (!isset($connect))
+			include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
 		$file = mysqli_real_escape_string($connect,$file);
 		$dir = mysqli_real_escape_string($connect,$dir);
 		$userID = mysqli_real_escape_string($connect,$_SESSION["user_id"]);
@@ -565,14 +546,11 @@
 		if (isset($_SESSION) == false)
 			session_start();
 		$dir = "";
-		include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
-		$userID = mysqli_real_escape_string($connect,$_SESSION["user_id"]);
-		$result = mysqli_query($connect,"Select Directory_ID from Files where UserID = '".$userID."' and Hash = '$hash' limit 1") or die("Error 025: ".mysqli_error($connect));
-		while ($row = mysqli_fetch_object($result)) {
-			$dir = $row->Directory_ID;
-		}	
+		if (!isset($connect))
+			include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
+		$userID = mysqli_real_escape_string($connect,$_SESSION["user_id"]);			
 		$res = "";
-		$result = mysqli_query($connect,"Select Displayname from Files where ID = '$dir' limit 1") or die("Error 025: ".mysqli_error($connect));
+		$result = mysqli_query($connect,"Select Files.Displayname from Files inner join Files f on f.UserID ='$userID' and f.Hash = '$hash' where Files.ID = f.Directory_ID");//"Select Displayname from Files where ID = '$dir' limit 1") or die("Error 025: ".mysqli_error($connect));
 		while ($row = mysqli_fetch_object($result)) {
 			$res = $row->Displayname;
 		}		
@@ -1099,7 +1077,7 @@
 		}
 		closedir($handle);
 		echo "Finished snapshotting on ".$fullPath." [$filecount] files<br>";
-		$zipfile->addFromString("database.sql",createTableBakup());
+		$zipfile->addFromString("database.sql",createTableBackup());
 		echo "Added database snapshot on ".$fullPath." [1] file";
 		$zipfile->Close();
 		
@@ -1109,7 +1087,7 @@
 	 * Source http://davidwalsh.name/backup-mysql-database-php
 	 * @param $tables the wildcard for the tables
 	 */
-	function createTableBakup($tables = '*')
+	function createTableBackup($tables = '*')
 	{
 		$return = "";
 		include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";		
@@ -1322,21 +1300,6 @@
 		return $imagepath;
 	}	
 	/**
-	 * get the user's storage	
-	 * @return the used space in byte
-	 */
-	function getManagedDataSize()
-	{			
-		include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";	
-		$amount_in_Byte  = 0;		
-		$result = mysqli_query($connect,"Select Size from Files")  or die("Error 023: ".mysqli_error($connect));
-		while ($row = mysqli_fetch_object($result)) {
-			$amount_in_Byte = $amount_in_Byte + $row->Size;			
-		}
-		mysqli_close($connect);		
-		return $amount_in_Byte ;
-	}
-	/**
 	 * get the last changes of the user's storage
 	 * @param $changes the amount of changes
 	 */
@@ -1375,9 +1338,9 @@
 			if ($row->Uploaded != $row->lastWrite){
 				echo "<span class=\"elusive icon-edit\"></span> ";		
 				if ($row->Displayname != $row->Filename)
-					echo "<a href ='index.php?module=file&file=".$row->Hash."'>".utf8_encode($row->Displayname)." (".date("d.m.y H:i:s",strtotime($row->lastWrite)).")</a>";
+					echo "<a href ='index.php?module=file&file=".$row->Hash."'>".htmlentities((getShortenedDisplayname(getFilenameWithLowercasedExtension($row->Displayname))))." (".date("d.m.y H:i:s",strtotime($row->lastWrite)).")</a>";
 				else
-					echo "<a href ='index.php?module=list&dir=".utf8_encode($row->Displayname)."'>".utf8_encode($row->Displayname)." (".date("d.m.y H:i:s",strtotime($row->lastWrite)).")</a>";
+					echo "<a href ='index.php?module=list&dir=".htmlentities($row->Displayname)."'>".htmlentities($row->Displayname)." (".date("d.m.y H:i:s",strtotime($row->lastWrite)).")</a>";
 				
 			}
 			else
@@ -1386,7 +1349,7 @@
 				if ($row->Displayname != $row->Filename)
 					echo "<a href ='index.php?module=file&file=".$row->Hash."'>".utf8_encode($row->Displayname)." (".date("d.m.y H:i:s",strtotime($row->Uploaded)).")</a>";
 				else
-					echo "<a href ='index.php?module=list&dir=".utf8_encode($row->Displayname)."'>".utf8_encode($row->Displayname)." (".date("d.m.y H:i:s",strtotime($row->Uploaded)).")</a>";
+					echo "<a href ='index.php?module=list&dir=".htmlentities($row->Displayname)."'>".htmlentities($row->Displayname)." (".date("d.m.y H:i:s",strtotime($row->Uploaded)).")</a>";
 		}
 		
 			echo "</li>";	
@@ -1399,101 +1362,7 @@
 		}			
 		echo "</div></div>";
 		mysqli_close($connect);		
-	}
-	/**
-	 * get the statistics about the filesystem usage. The result will be printed on screen.
-	 */
-	function getFileSystemStats()
-	{
-		include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";
-		$userID = mysqli_real_escape_string($connect,$_SESSION["user_id"]);
-		$result = mysqli_query($connect,"Select Filename,Displayname from Files where UserID = '$userID'")  or die("Error 023: ".mysqli_error($connect));
-		$array = array ();			
-		while ($row = mysqli_fetch_object($result)) {
-			if ($row->Filename != $row->Displayname){
-				
-				$extension = explode(".",$row->Displayname);				
-				$extension = strtolower($extension[count($extension)-1]);
-				if (isset($array[$extension]) == false)
-				{
-					$array[$extension] = 1;
-				}
-				else
-				{
-					$array[$extension]++;
-				}
-			}
-		}
-		if (count($array) != 0 ){
-			$i = 0;
-			foreach($array as $key => $val)
-			{
-				echo "['.".$key."',$val],";
-				$i++;
-				if ($i == 200)
-					break;
-			}
-		}
-		else
-		{
-				echo "";
-		}
-		mysqli_close($connect);	
-	}
-	/**
-	* return an randomized color.
-	* @return the color as hex.
-	*/
-	function rand_color() {
-		return '#' . str_pad(dechex(mt_rand(0, 0xFFFFFF)), 6, '0', STR_PAD_LEFT);
-	}
-	/**
-	* See getFileSytemStats.
-	* @return nothing. Result will be printed on screen.
-	*/
-	function getFileSystemStats2()
-	{
-		include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";
-		$userID = mysqli_real_escape_string($connect,$_SESSION["user_id"]);
-		$result = mysqli_query($connect,"Select Filename,Displayname from Files where UserID = '$userID'")  or die("Error 023: ".mysqli_error($connect));
-		$array = array ();		
-		$allFiles = 0;
-		while ($row = mysqli_fetch_object($result)) {
-			if ($row->Filename != $row->Displayname){
-				
-				$extension = explode(".",$row->Displayname);				
-				$extension = strtolower($extension[count($extension)-1]);
-				if (isset($array[$extension]) == false)
-				{
-					$array[$extension] = 1;
-				}
-				else
-				{
-					$array[$extension]++;
-				}
-				$allFiles++;
-			}
-		}
-		$GLOBALS["colors"] = array();
-		if (count($array) != 0 ){
-			$i = 1;			
-			foreach($array as $key => $val)
-			{
-				
-				$GLOBALS["colors"][$key] = rand_color();
-				$color = $GLOBALS["colors"][$key];
-				echo "<div class=\"progress-bar\" title = \"*.$key: $val\" style=\"width: ".(100/($allFiles/$val))."%;background-color: ".$color.";\"><span class=\"sr-only\">test</span> </div>";
-				$i++;
-				if ($i == 200)
-					break;
-			}				
-		}
-		else
-		{
-				echo "";
-		}
-		mysqli_close($connect);	
-	}
+	}	
 	/**
 	* Print out a legend for the files which are currently on the filesytem.
 	*/
@@ -1527,7 +1396,7 @@
 			{
 				echo "
 					 <li class=\"list-group-item\">
-						<span class=\"badge\" style=\"background-color: ".$GLOBALS["colors"][$key]."\"> $val</span>
+						<span class=\"badge\"> $val</span>
 						*.$key
 					  </li>";
 				$i++;
@@ -1714,28 +1583,21 @@
 	 */
 	function getExternalShare($share,$viewonly){
 		include $GLOBALS["Program_Dir"]."Includes/DataBase.inc.php";
-		$result = mysqli_query($connect,"Select * from Share  where Extern_ID = '$share' limit 1") or die("Error: 029".mysqli_error($connect));	
+		$result = mysqli_query($connect,"Select Filename, Displayname, f.UserId,s.Used,f.Hash from Files f inner join Share s on Extern_ID = '$share' and f.Hash = s.Hash") or die("Error: 029".mysqli_error($connect));	
 		$used = 0;
 		while ($row = mysqli_fetch_object($result)) {
 			$hash = $row->Hash;
-			$used = $row->Used;
-			$resultDownload = mysqli_query($connect,"Select * from Files  where Hash = \"".$hash."\" limit 1") or die("Error: 029");
-			
-			while ($row = mysqli_fetch_object($resultDownload)) {																	
-				$filenamenew = $row->Filename;
-				$displayname = $row->Displayname;
-				$user = $row->UserID;
-			}				
+			$used = $row->Used;						
 			$used++;
-
-			if (!isset($_SESSION["user_logged_in"]))
-				$_SESSION["user_id"] = $user;
-			mysqli_query($connect,"Update Share set Used = $used where Extern_ID = '$share'");
+			$filenamenew = $row->Filename;
+			$displayname = $row->Displayname;
+			//if (!isset($_SESSION["user_logged_in"]))
+				//$_SESSION["user_id"] = $user;
+				mysqli_query($connect,"Update Share set Used = $used where Extern_ID = '$share'");
 			if ($filenamenew != $displayname){
-			$fullPath = $GLOBALS["Program_Dir"]."Storage/".$filenamenew; 	
-			$_SESSION["current_file"] =  $fullPath;		
-				if (file_exists($fullPath)) {
-				
+					$fullPath = getStoragePath().$filenamenew; 	
+				//$_SESSION["current_file"] =  $fullPath;					
+				if (file_exists($fullPath)) {				
 						header('Content-Description: File Transfer');
 						header('Content-Type: '.getMimeType($fullPath)); 
 						if ($viewonly == false)
@@ -1756,14 +1618,15 @@
 				//TODO: Possibility to leak by foreign user id?
 				//echo $filenamenew;
 				startZipCreation($filenamenew);
-				if (!isset($_SESSION["user_logged_in"]))
-					$_SESSION["user_id"] = -1;
+				//if (!isset($_SESSION["user_logged_in"]))
+				//	$_SESSION["user_id"] = -1;
 			}			
 		} 
 		
 		if (mysqli_affected_rows($connect) == 0)
 		{
 			header("Location: index.php?message=DeadLink"); 
+			exit();
 		}
 		mysqli_close($connect);	
 	}

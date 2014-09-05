@@ -99,6 +99,14 @@
 		}		
 	}
 	/**
+	* Redirects the user to the https version of the program
+	*/
+	function redirectToHTTPS(){
+		if(!isset($_SERVER['HTTPS']) || $_SERVER['HTTPS'] == ""){			
+			header("Location: https://".$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI']);
+		}
+	}
+	/**
 	 * banUser ban an user
 	 * @param $client_ip the ip of the user
 	 * @param $client the user agent
@@ -178,5 +186,24 @@
 		if ($GLOBALS["config"]["Program_Enable_Logging"] == 1){		
 			log_event("exception",$exception->getFile()." : Error on line \"".$exception->getLine()."\" Message: \"".$exception->getMessage()."\"");
 		}		
-	}		
+	}
+	/**
+	* Include the plugins into the navigation
+	*/
+	function includePlugins(){
+		$handle= opendir ($GLOBALS["Program_Dir"]."Includes/Plugins/");
+		while ($file = readdir ($handle)) {
+			if (strpos($file,"inc.php") !== false){				
+				if (isset($GLOBALS["plugins"]) == false){
+					$title = file_get_contents ($GLOBALS["Program_Dir"]."Includes/Plugins/".str_replace(".inc.php",".nav.php",$file));
+					$GLOBALS["plugins"] = array($title => "Plugins/".str_replace(".inc.php","",$file) );
+				}					
+				else if (isset($GLOBALS["plugins"][$file]) == false){
+					$title = file_get_contents ($GLOBALS["Program_Dir"]."Includes/Plugins/".str_replace(".inc.php",".nav.php",$file));
+					$GLOBALS["plugins"][$title] = "Plugins/".str_replace(".inc.php","",$file) ;
+				}
+			}
+		}
+		closedir($handle);
+	}	
 ?>
